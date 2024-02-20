@@ -1,1 +1,1 @@
-include letsgoing_rpi_arduinocontrol/resources/*
+include ShutdownApplet/resources/*

@@ -10,7 +10,7 @@ Additions welcome!
 
 Todo:
   - window icon (shutdown button merged with clock dial)
-  - linux support
+  - include font
   - support for dark themes
 
 ## Installation

@@ -27,6 +27,9 @@ class ShutdownApplet:
         self.label.pack()
 
         self.label.bind("<MouseWheel>", self.on_scroll)
+        if self.find_OS() == "Linux":
+            self.label.bind("<Button-4>", self.on_scroll)
+            self.label.bind("<Button-5>", self.on_scroll)
         self.label.bind("<Button-1>", self.on_click)
         self.label.bind("<Return>", self.on_click)
 
@@ -61,19 +64,26 @@ class ShutdownApplet:
 
     def on_scroll(self, event: tk.Event) -> None:
         if not self.shutting_down:
-            if event.delta > 0:
+            if event.delta > 0 or event.num == 4:
                 self.seconds += 60
-            elif event.delta < 0:
+            elif event.delta < 0 or event.num == 5:
                 self.seconds -= 60
 
             self.seconds = self.min_max_seconds(self.seconds)
             self.label.config(text=self.seconds_to_str(self.seconds))
         pass
 
-    def on_click(self, event) -> None:
+    def on_click(self, event: tk.Event) -> None:
         if self.shutting_down:
             self.cancel_system_call()
         elif not self.shutting_down:
+            if self.find_OS() == "Linux":
+                diff = self.seconds % 60
+                if diff != 0:
+                    self.seconds += 60 - diff
+                    self.seconds = self.min_max_seconds(self.seconds)
+                    self.label.config(text=self.seconds_to_str(self.seconds, colons=True))
+                    return
             self.timer = self.window.after(100, self.on_timer)
             self.next_decr = time.time()
             self.do_system_call()
@@ -97,10 +107,12 @@ class ShutdownApplet:
         pass
 
     def do_system_call(self) -> None:
-        self.shutting_down = True
         os = self.find_OS()
+        self.shutting_down = True
         if os == "Windows":
             subprocess.run("shutdown -s -t {}".format(self.seconds))
+        if os == "Linux":
+            subprocess.run(["shutdown", "+{}".format(int(self.seconds / 60))])
         pass
 
     def cancel_system_call(self) -> None:
@@ -114,6 +126,8 @@ class ShutdownApplet:
         os = self.find_OS()
         if os == "Windows":
             subprocess.run("shutdown -a")
+        if os == "Linux":
+            subprocess.run(["shutdown", "-c"])
         pass
 
 
